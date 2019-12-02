@@ -1,5 +1,60 @@
-\documentclass{article}
+ \documentclass{article}
 \usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage[english]{babel}
+\usepackage[protrusion=true,expansion =true]{microtype}   
+\usepackage{amsmath,amsfonts,amsthm,amssymb}
+\usepackage{graphicx,epsfig,epsf,fancyhdr}
+\usepackage{graphicx}
+\usepackage{cite}
+\usepackage{float}
+\usepackage{titlepic}
+\usepackage[export]{adjustbox}
+\usepackage{pdfpages}
+\usepackage{soul}
+\usepackage{appendix}
+\usepackage{nomencl}
+\usepackage{etoolbox}
+\usepackage{typearea}
+\usepackage{gensymb}
+\usepackage{caption}
+\usepackage{hyperref}
+\usepackage[table,xcdraw]{xcolor}
+\usepackage{placeins}
+\usepackage{amssymb}
+%\documentclass[xcolor=table]{beamer}
+\usepackage[a4paper,pdftex]{geometry}    % A4paper margins
+\setlength{\oddsidemargin}{5mm}            % Remove 'twosided' indentation
+\setlength{\evensidemargin}{5mm}
+\usepackage{setspace}
+\usepackage[load-configurations = abreviations]{siunitx}
+\usepackage{listings}
+\usepackage{xcolor}
+ 
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+ 
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codepurple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
 
 \title{Linear Actuated Variable Intake System (LATVIS)}
 \author{John Wiggins }
@@ -12,16 +67,15 @@
 
 \maketitle
 
-\section{Introduction}
-The goals of this project were to develop a lightweight electronics housing system that could communicate via CAN bus. The RPM of the AR 20 vehicle would be then logged onto a microprocessor and converted to length, via the Helmholtz relationship between length and RPM.
-
-
 \begin{figure}[h!]
 \centering
 \includegraphics[scale=0.5, angle = 90]{Electronics_Housing.jpg}
 \caption{Electronics Housing Assembly}
 \label{fig:assembly}
 \end{figure}
+
+\section{Introduction}
+The goals of this project were to develop a lightweight electronics housing system that could communicate via CAN bus. The RPM of the AR 20 vehicle would be then logged onto a microprocessor and converted to length, via the Helmholtz relationship between length and RPM.
 
 \section{Components}
 This project was split into two major subsystems. The first subsystem is the On-Board controller housing that lives in the Side-Pod. The second subsystem is the Simulated Interactive Display (SID) that allowed for tuning of the electronics system without the car running.
@@ -33,7 +87,7 @@ The RoboClaw motor controller controls the actuator's DC motor via a PWM signal 
 \newline 
 \begin{figure}[h!]
 \centering
-\includegraphics[scale=0.6]{ME_490_Drawings.png}
+\includegraphics[scale=0.7]{ME_490_Drawings.png}
 \caption{RoboClaw Project Wiring Diagram}
 \label{fig:roboclaw}
 \end{figure}
@@ -51,13 +105,71 @@ The CANVAS PCB operates as the MCU for the on-board system. With an integrated C
 
 \begin{figure}[h!]
 \centering
-\includegraphics[scale=0.6]{pcb_2.jpg}
+\includegraphics[scale=0.5]{pcb_2.jpg}
 \caption{CANVAS Board upon initial completion}
 \label{fig:CANVAS_WorkBench}
 \end{figure}
 
 \section{CANVAS PCB Design}
 \section{CAN Communication Notes}
+This section will go into detail on the CAN communication notes for this particular project. CAN communication within the few systems prooved itself to be a challenge and here are some notes that helped the project overcome these.
+\subsection{Parameters}
+The project parameters were found via sniffing the line with a Saleae Logic Analyzer and Motec documentation. Here are is a list of data points that were logged:
+
+\begin{center}
+\begin{tabular}{ | c | c | }
+\hline
+ \textbf{Motec Baud Rate} & 1 Mbps \\ 
+ \hline
+ \textbf{Mask} & 0xFF \\ 
+ \hline
+ \textbf{Channel} & 0x520 \\    
+ \hline
+ \textbf{Type of CAN} & Standard \\
+ \hline
+ \textbf{Array Length} & 8 \\
+ \hline
+ \textbf{Byte to RPM Conversion Factor} & x100\\
+ \hline
+\end{tabular}
+\end{center}
+
+\subsection{Hardware and Testing}
+The hardware use to convert the CAN signal to SPI was the NiRen MCP2515 Can breakout board. This board uses the MCP2515 chip as the main processing IC and allows for easy integration of the breakout board into any test system.
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.15]{NiRen.jpg}
+\caption{NiRen MCP2515 CAN Breakout Board}
+\label{fig:NiRen}
+\end{figure}
+
+The first step that was taken was using the example code found on the MCP2515 Seeed-Studio library to verify the boards worked. The library can be found \href{https://github.com/Seeed-Studio/CAN_BUS_Shield}{\underline{here on github}}. The set-up looked as the following:
+\begin{figure}[H]
+\centering
+\includegraphics[scale=0.7]{CAN_Test.jpg}
+\caption{CAN Communication Test Setup}
+\label{fig:NiRen}
+\end{figure}
+
+There were three errors that occurred with the setup in Figure 5 that needed to be adjusted in order to obtain communication between the two boards. The two notable changes were:
+\begin{itemize}
+    \item \textbf{Terminating Resistor:} Add 120 Ohm terminating resistor to at least one side of the communication. It does not matter which side you add it to, however the system must have one to obtain communication. One was added to the board to ensure there was always one in the loop.
+    \item \textbf{16 Mhz Clock:} In order to use the arduino MCP2515 Library, the boards require a 16 Mhz clock. The NiRen boards to not come assembled with one, but rather a 8 Mhz clock. Replacing the clock to a 16 Mhz clock solve this communication issue.
+    \item \textbf{CAN Wires Have a Max Length:} During testing, a 5 ft long cable was used to test communication across the two boards, due to the distance between the test computer and the test bench. The signal could not complete this length without developing errors and a switch to a shorter length fixed this issue. According to the National Instruments website, at 1 Mbit/Sec, while the Bus Length can go up to 131 ft, the max Cable Stub Length, which is what this system is concerned with, is 1 ft. Thus, using an extended cable was not going to work and a shorter cable did resolve this issue. 
+\end{itemize}
+
+After making these adjustments, the communication issues were resolved and the boards were able to send the sample messages across.
+\bigskip
+
+The next step was to test the CAN communication to the CANVAS board. This involved running jumpers to the boards CAN terminals and rewriting the buffer array to have all zeros except the 0-th byte, which contained anywhere between a 0 to 255. 
+\[\textrm{buf}[8] = [150,0,0,0,0,0,0,0];\]
+Multiplying this value by the RPM conversion factor of 100, converts, for example, a 42 to 4200, which would be the example RPM. Thus, sending a 150 would be 15000 which is close to the max value the vehicle would be sending and a good test value for a fully contracted verification of communication. 
+\subsection{Library and Coding}
+The MCP Can library used had a few key functions that helped send/recieve messages.
+\subsubsection{Receiving Messages}
+Below is an example of Receiving Messages that comes with the library. It covers the the main calls and setup of checking a received code. This was also the same code used to sniff the line on the AR-20 Vehicle and verify the data was being recieved.
+\lstinputlisting[language=C++]{receive_check.ino}
+
 \section{Static Interactive Display (SID)}
 \section{Vehicle Constraints}
 \section{Manufacturing}
